@@ -11,7 +11,7 @@ https://github.com/ThomasLecat/gym-bandit-environments
 
 Both experiments involve two armed bandits giving rewards of 1 with probabilities p1 and p2. In the first one, p1 and p2 are independent. In the second one, p1 and p2 are linked by the relation p1 + p2 = 1. The purpose of the experiments is to study whether the agent is able to learn the relationship between the two arms and use it to perform optimally. Please refer to the original paper for a full description of the experiments.
 
-Bandits environments are stateless but the training is organised in fake episodes during which the internal state of the LSTM is kept. The length of these fake episode is a parameter (see "How to" section)
+Bandits environments are stateless but the training is organised in fake episodes during which the internal state of the LSTM is kept. The length of these fake episode is 100 in these experiments but can be set to a different value using the argument -n (see "How to" section)
 
 # running with bandit environments
 
@@ -26,7 +26,7 @@ The two callable scripts are train.py and test.py.
 Both take the same arguments as input. Among them, we can find:
 
 * -w : number of workers working in parallel
-* -e : gym environment if (ex: BanditTwoArmedDependentFixed-v0)
+* -e : gym environment id (ex: BanditTwoArmedDependentFixed-v0)
 * -m : to resample environments at the beginning of each (fake) episode
 * -n : number of trials in each (fake) episode (default is 100)
 * -lr : learning rate (default is 1e-4)
@@ -51,9 +51,8 @@ Examples of calls:
 
 The hyperparameters are somewhat spread across the code... Here's the location of some of them :
 * number of training steps : num_global_step in worker.py run function.
-* number of testing steps : num_test_step next to num_global_step in worker.py
+* number of testing steps : num_test_step next to num_global_step in worker_test.py
 * discount factor : file A3C.py, class A3C, method process : change gamma value in the line : "batch = process_rollout(rollout, gamma=0.99, lambda_=1.0)"
-* coefficient of the value function loss : file A3C.py, class A3C, method __init__ : change the value in line : "self.loss = pi_loss + (0.5 * vf_loss) - (0.01 * entropy)"
 * number of steps in each rollout (t_max in the original A3C paper): file A3C.py, class A3c, method __imit__, change the value in line : "num_local_step = 20"
 * learning rate : change by adding the argument -lr <value> when calling python train.py (see section above)
 * number of trials in a fake episode for bandit environments : change by adding the argument -n <value> when calling python trian.py (see section above)

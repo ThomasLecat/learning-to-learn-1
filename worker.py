@@ -25,8 +25,8 @@ class FastSaver(tf.train.Saver):
 def run(args, server):
     env = create_env(args.env_id, client_id=str(args.task), remotes=args.remotes, num_trials=args.num_trials)
 
-    num_global_steps = 60000000 
-    num_test_steps = 1000000
+    num_global_steps = 60000000
+    
     trainer = A3C(env, args.task, args.visualise, args.learning_rate, args.meta, args.remotes, args.num_trials, num_global_steps)
 
     # log, checkpoints et tensorboard
@@ -73,7 +73,7 @@ def run(args, server):
                              save_model_secs=30,
                              save_summaries_secs=30)
 
-    
+
     # beginning of the training
     logger.info(
         "Starting session. If this hangs, we're mostly likely waiting to connect to the parameter server. " +
@@ -91,7 +91,7 @@ def run(args, server):
     sv.stop()
     logger.info('Training finished ; reached %s steps. worker stopped.', global_step)
     time.sleep(5)
-    
+
     '''
     # Beginning of the test phase
     with sv.managed_session(server.target, config=config) as sess, sess.as_default():
@@ -182,7 +182,7 @@ if __name__ == "__main__":
     tf.app.run()
 
 '''
-*(1) A tf.train.Server object contains a set of local devices, a set of connections to other tasks in its tf.train.ClusterSpec, and a tf.Session that can use these to perform a distributed computation. 
+*(1) A tf.train.Server object contains a set of local devices, a set of connections to other tasks in its tf.train.ClusterSpec, and a tf.Session that can use these to perform a distributed computation.
     Each server is a member of a specific named job and has a task index within that job
 
 *(2) La valeur de "_" change pour chaque job et pour chaque task a l'interieur des job. Par exemple, pour le worker w-1 :
@@ -197,8 +197,3 @@ if __name__ == "__main__":
 
 
 '''
-
-
-
-
-
