@@ -53,7 +53,7 @@ The hyperparameters are somewhat spread across the code... Here's the location o
 * number of training steps : num_global_step in worker.py run function.
 * number of testing steps : num_test_step next to num_global_step in worker_test.py
 * discount factor : file A3C.py, class A3C, method process : change gamma value in the line : "batch = process_rollout(rollout, gamma=0.99, lambda_=1.0)"
-* number of steps in each rollout (t_max in the original A3C paper): file A3C.py, class A3c, method __imit__, change the value in line : "num_local_step = 20"
+* number of steps in each rollout (t_max in the original A3C paper): file A3C.py, class A3c, method __init__, change the value in line : "num_local_step = 5"
 * learning rate : change by adding the argument -lr <value> when calling python train.py (see section above)
 * number of trials in a fake episode for bandit environments : change by adding the argument -n <value> when calling python trian.py (see section above)
 
@@ -76,8 +76,8 @@ The hyperparameters are somewhat spread across the code... Here's the location o
 # Installation
 
 ```
-conda create --name universe-starter-agent python=3.5
-source activate universe-starter-agent
+conda create --name learning-to-learn-1 python=3.5
+source activate learning-to-learn-1
 
 brew install tmux htop cmake golang libjpeg-turbo      # On Linux use sudo apt-get install -y tmux htop cmake golang libjpeg-dev
 
@@ -92,7 +92,7 @@ conda install -y scipy
 
 
 Add the following to your `.bashrc` so that you'll have the correct environment when the `train.py` script spawns new bash shells
-```source activate universe-starter-agent```
+```source activate learning-to-learn-1```
 
 # Example
 
