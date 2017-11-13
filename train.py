@@ -55,7 +55,7 @@ def create_commands(session, num_workers, remotes, env_id, logdir, learning_rate
 
     if visualise:
         if "Bandit" in env_id:
-            print "Visualisation isn't possible with Bandit problems"
+            print("Visualisation isn't possible with Bandit problems")
         else:
             base_cmd += ['--visualise']
 
@@ -73,7 +73,8 @@ def create_commands(session, num_workers, remotes, env_id, logdir, learning_rate
         cmds_map += [new_cmd(session,
             "w-%d" % i, base_cmd + ["--job-name", "worker", "--task", str(i), "--remotes", remotes[i]], mode, logdir, shell)]
 
-    cmds_map += [new_cmd(session, "tb", ["python", "-m", "tensorflow.tensorboard", "--logdir", logdir, "--port", "12345"], mode, logdir, shell)]
+    #cmds_map += [new_cmd(session, "tb", ["python", "-m", "tensorflow.tensorboard", "--logdir", logdir, "--port", "12345"], mode, logdir, shell)]
+    cmds_map += [new_cmd(session, "tb", ["tensorboard", "--logdir", logdir, "--port", "12345"], mode, logdir, shell)]
     if mode == 'tmux':
         cmds_map += [new_cmd(session, "htop", ["htop"], mode, logdir, shell)]
 
@@ -97,8 +98,8 @@ def create_commands(session, num_workers, remotes, env_id, logdir, learning_rate
 
     if mode == 'tmux':
         cmds += [
-        "kill $( lsof -i:12345 -t ) > /dev/null 2>&1",  # kill any process using tensorboard's port (original comment) 
-        "kill $( lsof -i:12222-{} -t ) > /dev/null 2>&1".format(num_workers+12222), # kill any processes using ps / worker ports (original comment) 
+        "kill $( lsof -i:12345 -t ) > /dev/null 2>&1",  # kill any process using tensorboard's port (original comment)
+        "kill $( lsof -i:12222-{} -t ) > /dev/null 2>&1".format(num_workers+12222), # kill any processes using ps / worker ports (original comment)
         "tmux kill-session -t {}".format(session),
         "tmux new-session -s {} -n {} -d {}".format(session, windows[0], shell)
         ]

@@ -52,16 +52,16 @@ class LSTMPolicyBandit(object):
         self.local_time = tf.placeholder(tf.float32, shape=[None, 1], name="local_time")
         self.x = tf.placeholder(tf.float32, [None]+list(ob_space))
 
-        input = tf.concat([self.last_reward, self.last_action, self.local_time], 1) 
+        input = tf.concat([self.last_reward, self.last_action, self.local_time], 1)
         input = tf.expand_dims(input, [0]) # the first 1's is batch_size (fake)
 
-    	size = 48
+        size = 48
         if use_tf100_api:
             lstm = rnn.BasicLSTMCell(size, state_is_tuple=True)
         else:
             lstm = rnn.rnn_cell.BasicLSTMCell(size, state_is_tuple=True)
         self.state_size = lstm.state_size
-        step_size = tf.shape(self.x)[:1] 
+        step_size = tf.shape(self.x)[:1]
 
         c_init = np.zeros((1, lstm.state_size.c), np.float32)
         h_init = np.zeros((1, lstm.state_size.h), np.float32)
@@ -91,8 +91,8 @@ class LSTMPolicyBandit(object):
     def get_initial_features(self):
         return self.state_init
 
-    def act(self, ob, r, a, length, c, h): 
-        sess = tf.get_default_session()          
+    def act(self, ob, r, a, length, c, h):
+        sess = tf.get_default_session()
         return sess.run([self.sample, self.vf] + self.state_out,
                     {self.x: [ob], self.last_reward: [[r]], self.last_action: [a], self.local_time: [[length]], self.state_in[0]: c, self.state_in[1]: h})
         # Note : on met un + entre [self.sample, self.vf] et self.state_out car self.state_out est deja une liste en elle meme (donc on concatene)
@@ -164,10 +164,10 @@ class LSTMPolicy(object):
         return self.state_init
 
     def act(self, ob, r, a, l, c, h): # r, a, and l (length) ununsed
-        sess = tf.get_default_session()          
+        sess = tf.get_default_session()
         return sess.run([self.sample, self.vf] + self.state_out,
                         {self.x: [ob], self.state_in[0]: c, self.state_in[1]: h}) # *(1)
-        
+
 
     def value(self, ob, r, a, l, c, h):
         sess = tf.get_default_session()

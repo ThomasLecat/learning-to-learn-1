@@ -76,10 +76,13 @@ The hyperparameters are somewhat spread across the code... Here's the location o
 # Installation
 
 ```
-conda create --name learning-to-learn-1 python=3.5
-source activate learning-to-learn-1
+conda create --name learning-to-learn python=3.5
+source activate learning-to-learn
 
-brew install tmux htop cmake golang libjpeg-turbo      # On Linux use sudo apt-get install -y tmux htop cmake golang libjpeg-dev
+# On Mac:
+brew install tmux htop cmake golang libjpeg-turbo      
+# On Linux:
+sudo apt-get install -y tmux htop cmake golang libjpeg-dev zlib1g-dev
 
 pip install "gym[atari]"
 pip install universe
@@ -92,7 +95,7 @@ conda install -y scipy
 
 
 Add the following to your `.bashrc` so that you'll have the correct environment when the `train.py` script spawns new bash shells
-```source activate learning-to-learn-1```
+```source activate learning-to-learn```
 
 # Example
 

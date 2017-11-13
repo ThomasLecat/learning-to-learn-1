@@ -25,7 +25,7 @@ def create_env(env_id, client_id, remotes, num_trials, **kwargs):
     elif "Bandit" in env_id:
         return create_bandit_env(env_id, client_id, remotes, num_trials)
     else:
-	''' (original comment) Assume atari. '''
+        ''' (original comment) Assume atari. '''
         assert "." not in env_id  # (original comment) universe environments have dots in names.
         return create_atari_env(env_id)
 
@@ -183,7 +183,7 @@ class DiagnosticsInfoI(vectorized.Filter):
 
 def _process_frame42(frame):
     frame = frame[34:34+160, :160]
-    #(original comment) 
+    #(original comment)
     # Resize by half, then down to 42x42 (essentially mipmapping). If
     # we resize directly we lose pixels that, when mapped to 42x42,
     # aren't close enough to the pixel boundary.
@@ -226,7 +226,7 @@ class FixedKeyState(object):
         return action_n
 
 class DiscreteToFixedKeysVNCActions(vectorized.ActionWrapper):
-    """ (original comment) 
+    """ (original comment)
     Define a fixed action space. Action 0 is all keys up. Each element of keys can be a single key or a space-separated list of keys
 
     For example,
@@ -260,7 +260,7 @@ class DiscreteToFixedKeysVNCActions(vectorized.ActionWrapper):
         self.key_state = FixedKeyState(uniq_keys)
 
     def _action(self, action_n):
-        # (original comment) 
+        # (original comment)
         # Each action might be a length-1 np.array. Cast to int to
         # avoid warnings.
         return [self._actions[int(action)] for action in action_n]
