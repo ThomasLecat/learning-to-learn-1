@@ -10,6 +10,7 @@ import os
 from a3c import A3C
 from envs import create_env
 import distutils.version
+from config import Config #new
 use_tf12_api = distutils.version.LooseVersion(tf.VERSION) >= distutils.version.LooseVersion('0.12.0')
 
 logger = logging.getLogger(__name__)
@@ -25,9 +26,8 @@ class FastSaver(tf.train.Saver):
 def run(args, server):
     env = create_env(args.env_id, client_id=str(args.task), remotes=args.remotes, num_trials=args.num_trials)
 
-    num_global_steps = 60000000
-    
-    trainer = A3C(env, args.task, args.visualise, args.learning_rate, args.meta, args.remotes, args.num_trials, num_global_steps)
+    num_global_steps = Config.NUM_TRAINING_STEPS
+    trainer = A3C(env, args.task, args.visualise, args.meta, args.remotes, args.num_trials)
 
     # log, checkpoints et tensorboard
 
@@ -96,7 +96,7 @@ def run(args, server):
     # Beginning of the test phase
     with sv.managed_session(server.target, config=config) as sess, sess.as_default():
         sess.run(trainer.sync)
-        trainer.test(sess, summary_writer)
+        trainer.start(sess, summary_writer)
         initial_global_step = global_step = sess.run(trainer.global_step)
         logger.info("Starting tests at step=%d", global_step)
         while not sv.should_stop() and (not num_test_steps or (global_step - initial_global_step)  < num_test_steps):
@@ -140,7 +140,6 @@ def main(_): # In Python shells, the underscore (_) means the result of the last
     parser.add_argument('--num-workers', default=1, type=int, help='Number of workers')
     parser.add_argument('--log-dir', default="/tmp/pong", help='Log directory path')
     parser.add_argument('--env-id', default="PongDeterministic-v3", help='Environment id')
-    parser.add_argument('-lr', '--learning-rate', default = 1e-4, type=float, help='Learning rate for the Adam Optimizer') # (new)
     parser.add_argument('-m', '--meta', action='store_true', help='if present, the training is done on different environments to achieve meta-learning') # (new)
     parser.add_argument('-r', '--remotes', default=None,
                         help='References to environments to create (e.g. -r 20), '

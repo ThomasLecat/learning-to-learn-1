@@ -10,6 +10,7 @@ import threading
 import gym
 import distutils.version
 import pdb # debugger
+from config import Config #new
 use_tf12_api = distutils.version.LooseVersion(tf.VERSION) >= distutils.version.LooseVersion('0.12.0')
 
 def discount(x, gamma): # discount([1,1,1,1], 0.5) gives [1.875,1.75, 1.5, 1]
@@ -156,6 +157,10 @@ runner appends the policy to the queue.
             if render:
                 env.render()
 
+            # Reward clipping
+            if Config.USE_REWARD_CLIPPING:
+                reward = max(-1,min(1,reward))
+
             # collect the experience in the partial rollout
             rollout.add(last_state, action, reward, value_, terminal, last_features, length)
 
@@ -207,7 +212,7 @@ runner appends the policy to the queue.
 
 
 class A3C(object):
-    def __init__(self, env, task, visualise, learning_rate, meta, remotes, num_trials, total_num_steps):
+    def __init__(self, env, task, visualise, meta, remotes, num_trials):
         """ (original comment)
 An implementation of the A3C algorithm that is reasonably well-tuned for the VNC environments.
 Below, we will have a modest amount of complexity due to the way TensorFlow handles data parallelism.
@@ -218,10 +223,10 @@ should be computed.
         self.env = env
         self.task = task
         self.remotes = remotes
-        self.learning_rate = learning_rate
+        self.learning_rate = Config.LEARNING_RATE
         self.num_trials = num_trials
         isBanditEnvironment = "Bandit" in env.env.spec.id # boolean variable, is True if the environment is a Bandit environment
-        num_local_steps = 5 # t_max in the A3C paper: number of steps in the rollouts
+        num_local_steps = Config.TIME_MAX # t_max in the A3C paper: number of steps in the rollouts
 
         worker_device = "/job:worker/task:{}/cpu:0".format(task)
         with tf.device(tf.train.replica_device_setter(1, worker_device=worker_device)):
@@ -231,7 +236,7 @@ should be computed.
                 else:
                     self.network = LSTMPolicy(env.observation_space.shape, env.action_space.n)
                 self.global_step = tf.get_variable("global_step", [], tf.int32, initializer=tf.constant_initializer(0, dtype=tf.int32),
-                                                   trainable=False) # Cree un compteur global et l'initialise a zero, saud si on reprend un training existant 
+                                                   trainable=False) # Cree un compteur global et l'initialise a zero, saud si on reprend un training existant
 
         with tf.device(worker_device):
             with tf.variable_scope("local"):
@@ -255,7 +260,7 @@ should be computed.
             # loss of value function
             vf_loss = 0.5 * tf.reduce_sum(tf.square(pi.vf - self.return_)) # why not taking the sum of the squared values of self.adv directly ?
             entropy = - tf.reduce_sum(prob_tf * log_prob_tf)
-            beta_entropy = (0.02/total_num_steps)*tf.cast(tf.constant(total_num_steps)-self.global_step, tf.float32)
+            beta_entropy = (Config.BETA_END-Config.BETA_START)*(tf.cast(self.global_step, tf.float32)/Config.NUM_TRAINING_STEPS), + Config.BETA_START
 
             bs = tf.to_float(tf.shape(pi.x)[0]) # bs = batch size = number of steps in the rollout
             self.loss = pi_loss + (0.05 * vf_loss) - (beta_entropy * entropy) # why 0.5 when we already put 0.5 in the definition of vf_loss ?
@@ -293,7 +298,8 @@ should be computed.
                 self.summary_op = tf.merge_all_summaries()
 
             # Create a list of (gradient, variable) pairs to feed into the Adam Optimizer (each variable will then be updated according to the paired gradient)
-            grads, _ = tf.clip_by_global_norm(grads, 40.0) # ?
+            if Config.USE_GRAD_CLIP:
+                grads, _ = tf.clip_by_global_norm(grads, Config.GRAD_CLIP_NORM)
             grads_and_vars = list(zip(grads, self.network.var_list))
 
             # copy weights from the parameter server to the local model
@@ -301,10 +307,13 @@ should be computed.
 
             # updates the global counter: adds (and assign) tf.shape(pi.x)[0] to the value of the variable self.global_step (initialise a zero), and inc_step takes this updtated value:
             inc_step = self.global_step.assign_add(tf.shape(pi.x)[0]) # on incremente le compteur global du nombre de steps contenus dans le rollout (= batch size) ; appele par la fonction process
-            self.inc_step = inc_step # so that we can call it directly from the inc_global_step method 
+            self.inc_step = inc_step # so that we can call it directly from the inc_global_step method
 
             # each worker has a different set of adam optimizer parameters
-            opt = tf.train.AdamOptimizer(self.learning_rate) # the default learning rate is 1e-4. This value with the argument -lr <new_value>
+            if Config.OPTIMIZER == 'RMSPROP':
+                opt = tf.train.RMSPropOptimizer(self.learning_rate) # the default learning rate is 1e-4. Change lr in config file
+            else:
+                opt = tf.train.AdamOptimizer(self.learning_rate)
             self.train_op = tf.group(opt.apply_gradients(grads_and_vars), inc_step) # tf.group creates an op that groups multiple operations (here, two operations)
             self.summary_writer = None
             self.local_steps = 0
@@ -337,7 +346,8 @@ The update is then sent to the parameter server.
         sess.run(self.sync)  # copy weights from shared to local
         rollout = self.pull_batch_from_queue() # takes all the partial rollouts in the queue (unless one is terminal: it stops after the terminal one)
         # print("in process, rollout is :\n", rollout)
-        batch = process_rollout(rollout, gamma=0.99, lambda_=1.0) # batch = Batch(batch_si, batch_a, batch_adv, batch_return, rollout.terminal, features) with batch_r : return (n-step)
+        gamma = Config.DISCOUNT
+        batch = process_rollout(rollout, gamma, lambda_=1.0) # batch = Batch(batch_si, batch_a, batch_adv, batch_return, rollout.terminal, features) with batch_r : return (n-step)
 
         # tensorboard:
         should_compute_summary = self.task == 0 and self.local_steps % 11 == 0

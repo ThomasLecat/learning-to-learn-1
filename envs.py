@@ -11,6 +11,7 @@ from universe.wrappers import BlockingReset, GymCoreAction, EpisodeID, Unvectori
 from universe import spaces as vnc_spaces
 from universe.spaces.vnc_event import keycode
 import time
+from config import Config #new
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 universe.configure_logging()
@@ -70,7 +71,7 @@ def create_vncatari_env(env_id, client_id, remotes, **_):
     env = Logger(env)
     env = BlockingReset(env)
     env = GymCoreAction(env)
-    env = AtariRescale42x42(env)
+    env = AtariRescale(env)
     env = EpisodeID(env)
     env = DiagnosticsInfo(env)
     env = Unvectorize(env)
@@ -83,7 +84,7 @@ def create_vncatari_env(env_id, client_id, remotes, **_):
 def create_atari_env(env_id):
     env = gym.make(env_id)
     env = Vectorize(env)
-    env = AtariRescale42x42(env)
+    env = AtariRescale(env)
     env = DiagnosticsInfo(env)
     env = Unvectorize(env)
     return env
@@ -181,27 +182,29 @@ class DiagnosticsInfoI(vectorized.Filter):
 
         return observation, reward, done, to_log
 
-def _process_frame42(frame):
+def _process_frame(frame):
     frame = frame[34:34+160, :160]
-    #(original comment)
-    # Resize by half, then down to 42x42 (essentially mipmapping). If
-    # we resize directly we lose pixels that, when mapped to 42x42,
+    # If finale size < 80x80 : resize by half, then down to 42x42 (essentially mipmapping).
+    # If we resize directly we lose pixels that, when mapped to 42x42,
     # aren't close enough to the pixel boundary.
-    frame = cv2.resize(frame, (80, 80))
-    frame = cv2.resize(frame, (42, 42))
+    image_height = Config.IMAGE_HEIGHT
+    image_width = Config.IMAGE_WIDTH
+    if image_height < 80 and image_width < 80:
+        frame = cv2.resize(frame, (80, 80))
+    frame = cv2.resize(frame, (image_height, image_width))
     frame = frame.mean(2)
     frame = frame.astype(np.float32)
     frame *= (1.0 / 255.0)
-    frame = np.reshape(frame, [42, 42, 1])
+    frame = np.reshape(frame, [image_height, image_width, 1])
     return frame
 
-class AtariRescale42x42(vectorized.ObservationWrapper):
+class AtariRescale(vectorized.ObservationWrapper):
     def __init__(self, env=None):
-        super(AtariRescale42x42, self).__init__(env)
-        self.observation_space = Box(0.0, 1.0, [42, 42, 1])
+        super(AtariRescale, self).__init__(env)
+        self.observation_space = Box(0.0, 1.0, [Config.IMAGE_HEIGHT, Config.IMAGE_WIDTH, 1])
 
     def _observation(self, observation_n):
-        return [_process_frame42(observation) for observation in observation_n]
+        return [_process_frame(observation) for observation in observation_n]
 
 class FixedKeyState(object):
     def __init__(self, keys):

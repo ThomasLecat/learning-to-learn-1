@@ -17,8 +17,6 @@ parser.add_argument('-d', '--dry-run', action='store_true',
                     help="Print out commands rather than executing them")
 parser.add_argument('--mode', type=str, default='tmux',
                     help="tmux: run workers in a tmux session. nohup: run workers with nohup. child: run workers as child processes")
-parser.add_argument('-lr', '--learning-rate', default=1e-4, type=float,
-                    help='The learning rate for the Adam Optimizer')
 parser.add_argument('-m', '--meta', action='store_true',
 					help='if present, the training is done on different environments to achieve meta-learning')
 parser.add_argument('-n', '--num-trials', type = int, default=100,
@@ -40,22 +38,21 @@ def new_cmd(session, name, cmd, mode, logdir, shell):
         return name, "nohup {} -c {} >{}/{}.{}.out 2>&1 & echo kill $! >>{}/kill.sh".format(shell, shlex_quote(cmd), logdir, session, name, logdir)
 
 
-def create_commands(session, num_workers, remotes, env_id, logdir, learning_rate, shell='bash', mode='tmux', visualise=False, meta=False, num_trials = 100):
+def create_commands(session, num_workers, remotes, env_id, logdir, shell='bash', mode='tmux', visualise=False, meta=False, num_trials = 100):
     # for launching the TF workers and for launching tensorboard
     base_cmd = [
         'CUDA_VISIBLE_DEVICES=',
         sys.executable, 'worker_test.py',
         '--log-dir', logdir,
         '--env-id', env_id,
-        '--num-workers', str(num_workers),
-        '--learning-rate', learning_rate]
+        '--num-workers', str(num_workers)]
 
     if "Bandit" in env_id:
         base_cmd += ['--num-trials', num_trials]
 
     if visualise:
         if "Bandit" in env_id:
-            print "Visualisation isn't possible with Bandit problems"
+            print("Visualisation isn't possible with Bandit problems")
         else:
             base_cmd += ['--visualise']
 
@@ -73,7 +70,8 @@ def create_commands(session, num_workers, remotes, env_id, logdir, learning_rate
         cmds_map += [new_cmd(session,
             "w-%d" % i, base_cmd + ["--job-name", "worker", "--task", str(i), "--remotes", remotes[i]], mode, logdir, shell)]
 
-    cmds_map += [new_cmd(session, "tb", ["python", "-m", "tensorflow.tensorboard", "--logdir", logdir, "--port", "12345"], mode, logdir, shell)]
+    #cmds_map += [new_cmd(session, "tb", ["python", "-m", "tensorflow.tensorboard", "--logdir", logdir, "--port", "12345"], mode, logdir, shell)]
+    cmds_map += [new_cmd(session, "tb", ["tensorboard", "--logdir", logdir, "--port", "12345"], mode, logdir, shell)]
     if mode == 'tmux':
         cmds_map += [new_cmd(session, "htop", ["htop"], mode, logdir, shell)]
 
@@ -97,8 +95,8 @@ def create_commands(session, num_workers, remotes, env_id, logdir, learning_rate
 
     if mode == 'tmux':
         cmds += [
-        "kill $( lsof -i:12345 -t ) > /dev/null 2>&1",  # kill any process using tensorboard's port (original comment) 
-        "kill $( lsof -i:12222-{} -t ) > /dev/null 2>&1".format(num_workers+12222), # kill any processes using ps / worker ports (original comment) 
+        "kill $( lsof -i:12345 -t ) > /dev/null 2>&1",  # kill any process using tensorboard's port (original comment)
+        "kill $( lsof -i:12222-{} -t ) > /dev/null 2>&1".format(num_workers+12222), # kill any processes using ps / worker ports (original comment)
         "tmux kill-session -t {}".format(session),
         "tmux new-session -s {} -n {} -d {}".format(session, windows[0], shell)
         ]
@@ -113,7 +111,7 @@ def create_commands(session, num_workers, remotes, env_id, logdir, learning_rate
 
 def run():
     args = parser.parse_args()
-    cmds, notes = create_commands("a3c", args.num_workers, args.remotes, args.env_id, args.log_dir, args.learning_rate, mode=args.mode, visualise=args.visualise, meta=args.meta, num_trials = args.num_trials)
+    cmds, notes = create_commands("a3c", args.num_workers, args.remotes, args.env_id, args.log_dir, mode=args.mode, visualise=args.visualise, meta=args.meta, num_trials = args.num_trials)
     if args.dry_run:
         print("Dry-run mode due to -d flag, otherwise the following commands would be executed:")
     else:

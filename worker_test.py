@@ -10,6 +10,7 @@ import os
 from a3c import A3C
 from envs import create_env
 import distutils.version
+from config import Config #new
 use_tf12_api = distutils.version.LooseVersion(tf.VERSION) >= distutils.version.LooseVersion('0.12.0')
 
 logger = logging.getLogger(__name__)
@@ -25,9 +26,8 @@ class FastSaver(tf.train.Saver):
 def run(args, server):
     env = create_env(args.env_id, client_id=str(args.task), remotes=args.remotes, num_trials=args.num_trials)
 
-    num_global_steps = 10000000 
-    num_test_steps = 1000000
-    trainer = A3C(env, args.task, args.visualise, args.learning_rate, args.meta, args.remotes, args.num_trials, num_global_steps)
+    num_test_steps = Config.NUM_TEST_STEPS
+    trainer = A3C(env, args.task, args.visualise, args.meta, args.remotes, args.num_trials)
 
     # log, checkpoints et tensorboard
 
@@ -139,8 +139,7 @@ def main(_): # In Python shells, the underscore (_) means the result of the last
     parser.add_argument('--job-name', default="worker", help='worker or ps')
     parser.add_argument('--num-workers', default=1, type=int, help='Number of workers')
     parser.add_argument('--log-dir', default="/tmp/pong", help='Log directory path')
-    parser.add_argument('--env-id', default="PongDeterministic-v3", help='Test Environment id')
-    parser.add_argument('-lr', '--learning-rate', default = 1e-4, type=float, help='Learning rate for the Adam Optimizer') # (new)
+    parser.add_argument('--env-id', default="PongDeterministic-v3", help='Environment id')
     parser.add_argument('-m', '--meta', action='store_true', help='if present, the training is done on different environments to achieve meta-learning') # (new)
     parser.add_argument('-r', '--remotes', default=None,
                         help='References to environments to create (e.g. -r 20), '
@@ -182,7 +181,7 @@ if __name__ == "__main__":
     tf.app.run()
 
 '''
-*(1) A tf.train.Server object contains a set of local devices, a set of connections to other tasks in its tf.train.ClusterSpec, and a tf.Session that can use these to perform a distributed computation. 
+*(1) A tf.train.Server object contains a set of local devices, a set of connections to other tasks in its tf.train.ClusterSpec, and a tf.Session that can use these to perform a distributed computation.
     Each server is a member of a specific named job and has a task index within that job
 
 *(2) La valeur de "_" change pour chaque job et pour chaque task a l'interieur des job. Par exemple, pour le worker w-1 :
@@ -197,8 +196,3 @@ if __name__ == "__main__":
 
 
 '''
-
-
-
-
-
