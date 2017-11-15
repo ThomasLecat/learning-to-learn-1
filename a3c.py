@@ -258,9 +258,9 @@ should be computed.
             pi_loss = - tf.reduce_sum(tf.reduce_sum(log_prob_tf * self.ac, [1]) * self.adv)
 
             # loss of value function
-            vf_loss = 0.5 * tf.reduce_sum(tf.square(pi.vf - self.return_)) # why not taking the sum of the squared values of self.adv directly ?
+            vf_loss = Config.BETA_V * tf.reduce_sum(tf.square(pi.vf - self.return_)) # why not taking the sum of the squared values of self.adv directly ?
             entropy = - tf.reduce_sum(prob_tf * log_prob_tf)
-            beta_entropy = (Config.BETA_END-Config.BETA_START)*(tf.cast(self.global_step, tf.float32)/Config.NUM_TRAINING_STEPS), + Config.BETA_START
+            beta_entropy = (Config.BETA_E_END-Config.BETA_E_START)*(tf.cast(self.global_step, tf.float32)/Config.NUM_TRAINING_STEPS), + Config.BETA_E_START
 
             bs = tf.to_float(tf.shape(pi.x)[0]) # bs = batch size = number of steps in the rollout
             self.loss = pi_loss + (0.05 * vf_loss) - (beta_entropy * entropy) # why 0.5 when we already put 0.5 in the definition of vf_loss ?
