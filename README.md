@@ -39,19 +39,19 @@ Meta-learning is performed as soon as the -m argument is present. In that case, 
 
 1. Training the agent with 1 worker on a two armed bandit with independent arms:
 
-'python train.py -e BanditTwoArmedIndependentUniform-v0' -l ./tmp/banditsIndependent -m
+`python train.py -e "BanditTwoArmedIndependentUniform-v0" -l ./tmp/banditsIndependent -m`
 
 2. Training the agent with 2 workers on a two armed bandit with dependent arms and p1 ~ {0.1,0.9}
 
-'python train.py -w 2 -e "BanditTwoArmedDependantUniform-v0" -l ./tmp/banditEasy -m
+`python train.py -w 2 -e "BanditTwoArmedDependantUniform-v0" -l ./tmp/banditEasy -m`
 
 3. Testing the previous agent on a two armed bandit with dependent arms and p2 ~ {0.25,0.75}
 
-'python test.py -e "BandittwoArmedDependentMedium-v0" -l ./tmp/banditEasy -m'
+`python test.py -e "BandittwoArmedDependentMedium-v0" -l ./tmp/banditEasy -m`
 
 4. Training an agent on Pong (default env, no meta learning), 16 workers:
 
-'python train.py -w 16 -e "Pong-v0" -l ./tmp/pong'
+`python train.py -w 16 -e "Pong-v0" -l ./tmp/pong`
 
 
 # Note : running with bandit environments
