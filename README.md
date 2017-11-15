@@ -7,55 +7,59 @@ The A3C-LSTM agent is based on OpenAI's universe-starter-agent. It uses Tensorfl
 The bandits environments used in the experiments can be found here:
 https://github.com/ThomasLecat/gym-bandit-environments
 
-# Experiments
+# Description of the experiments
 
-Both experiments involve two armed bandits giving rewards of 1 with probabilities p1 and p2. In the first one, p1 and p2 are independent. In the second one, p1 and p2 are linked by the relation p1 + p2 = 1. The purpose of the experiments is to study whether the agent is able to learn the relationship between the two arms and use it to perform optimally. Please refer to the original paper for a full description of the experiments.
+[See original paper for full description]
+Both experiments involve two armed bandits. The two arms give a reward of 1 with probabilities p1 and p2.
 
-Bandits environments are stateless but the training is organised in fake episodes during which the internal state of the LSTM is kept. The length of these fake episode is 100 in these experiments but can be set to a different value using the argument -n (see "How to" section)
+In the first experiment, p1 and p2 are independent: p1 ~ [0,1] and p2 ~ [0,1].
 
-# running with bandit environments
+In the second experiment, p1 and p2 are linked by the relation p2 = 1 - p1.
+Different configurations are possibles : p1 ~ U[0,1] (uniform setup), p1 ~ {0.1,0.9} (easy setup), p1 ~ {0.25,0.75} (medium setup), p1 ~ {0.4,0.6} (hard setup).
+
+The purpose of the experiments is to study whether the agent is able to learn the relationship between the two arms and use it to perform optimally.
+
+Bandits environments are stateless but the training is organised in fake episodes during which the internal state of the LSTM is kept. The length of these fake episode is 100 in these experiments but can be set to a different value using the argument -n when calling train.py or test.py
+
+# How to
+
+First, set the values of the parameters you want in config.py
+
+Then call train.py to train the model and test.py to test it.
+Both scripts take the same arguments as input. Among them, we can find:
+
+* -w : number of workers running in parallel
+* -e : gym environment id (ex: BanditTwoArmedDependentFixed-v0 or Breakout-v0)
+* -m : to recreate the environment at the beginning of each episode (performs meta learning if the creation of the environment bears some randomness)
+* -n : number of trials in each episode for bandits environments (default is 100)
+
+Meta-learning is performed as soon as the -m argument is present. In that case, the environment is recreated at the beginning of each episode. As some parameters are stochastic and sampled at the creation of the environment, the MDP can change from one episode to another. This results in training (and / or testing) the agent on a set of MDPs instead of a single one.
+
+# Example:
+
+1. Training the agent with 1 worker on a two armed bandit with independent arms:
+
+'python train.py -e BanditTwoArmedIndependentUniform-v0' -l ./tmp/banditsIndependent -m
+
+2. Training the agent with 2 workers on a two armed bandit with dependent arms and p1 ~ {0.1,0.9}
+
+'python train.py -w 2 -e "BanditTwoArmedDependantUniform-v0" -l ./tmp/banditEasy -m
+
+3. Testing the previous agent on a two armed bandit with dependent arms and p2 ~ {0.25,0.75}
+
+'python test.py -e "BandittwoArmedDependentMedium-v0" -l ./tmp/banditEasy -m'
+
+4. Training an agent on Pong (default env, no meta learning), 16 workers:
+
+'python train.py -w 16 -e "Pong-v0" -l ./tmp/pong'
+
+
+# Note : running with bandit environments
 
 Bandits environments are stateless, so there is now observation to input the agent's network. As described in the original paper Learning to Reinforcement Learn, the input of the agent's network when using bandit environments is a concatenation of :
 * the last action
 * the last reward
 * the timestep within the (fake) episode
-
-# How to
-
-The two callable scripts are train.py and test.py.
-Both take the same arguments as input. Among them, we can find:
-
-* -w : number of workers working in parallel
-* -e : gym environment id (ex: BanditTwoArmedDependentFixed-v0)
-* -m : to resample environments at the beginning of each (fake) episode
-* -n : number of trials in each (fake) episode (default is 100)
-* -lr : learning rate (default is 1e-4)
-
-Meta-learning is performed as soon as the -m argument is present. In that case, the environment is recreated at the beginning of each episode. As some parameters are stochastic and sampled at the creation of the environment, the MDP can change from one episode to another. This results in training (and / or testing) the agent on a set of MDPs instead of a single one.
-
-Examples of calls:
-
-1. Training and testing the agent on Pong (default env), no meta-learning, 16 workers: (similar behaviour to the original universe-starter-agent)
-
-		python train.py -w 16
-
-2. Training on a bandit env, no meta-learning, 1 worker, log directory changed:
-
-		python train.py -e "BanditTwoArmedDependantUniform-v0" -l ./tmp/bandit
-
-3. Training on a set of similar bandit env (meta-learning) and testing on a different bandit env, 16 worker, log-dir changed:
-
-		python train.py -e "BanditTwoArmedDependantEasy-v0" -m -te "BanditTwoArmedDependantMedium-v0" -l ./tmp/bandit
-
-# Hyperparameters
-
-The hyperparameters are somewhat spread across the code... Here's the location of some of them :
-* number of training steps : num_global_step in worker.py run function.
-* number of testing steps : num_test_step next to num_global_step in worker_test.py
-* discount factor : file A3C.py, class A3C, method process : change gamma value in the line : "batch = process_rollout(rollout, gamma=0.99, lambda_=1.0)"
-* number of steps in each rollout (t_max in the original A3C paper): file A3C.py, class A3c, method __init__, change the value in line : "num_local_step = 5"
-* learning rate : change by adding the argument -lr <value> when calling python train.py (see section above)
-* number of trials in a fake episode for bandit environments : change by adding the argument -n <value> when calling python trian.py (see section above)
 
 # Dependencies
 
