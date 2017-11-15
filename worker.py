@@ -26,7 +26,6 @@ class FastSaver(tf.train.Saver):
 def run(args, server):
     env = create_env(args.env_id, client_id=str(args.task), remotes=args.remotes, num_trials=args.num_trials)
 
-    num_global_steps = Config.NUM_TRAINING_STEPS
     trainer = A3C(env, args.task, args.visualise, args.meta, args.remotes, args.num_trials)
 
     # log, checkpoints et tensorboard
@@ -73,8 +72,14 @@ def run(args, server):
                              save_model_secs=30,
                              save_summaries_secs=30)
 
+    if args.test: # testing phase
+        run_test(trainer, sv, config, summary_writer, server)
+    else: # training phase
+        run_train(trainer, sv, config, summary_writer, server)
 
+def run_train(trainer, sv, config, summary_writer, server):
     # beginning of the training
+    num_train_steps = Config.NUM_TRAINING_STEPS
     logger.info(
         "Starting session. If this hangs, we're mostly likely waiting to connect to the parameter server. " +
         "One common cause is that the parameter server DNS name isn't resolving yet, or is misspecified.")
@@ -83,7 +88,7 @@ def run(args, server):
         trainer.start(sess, summary_writer) # lance l'execution de la methode "_run" du TheadRunner "trainer.runner" (object A3C du fichier A3C), qui genere des partial rollouts et les mets dans la queue
         global_step = sess.run(trainer.global_step) # will check in the tmp folder if there is some previously interrupted training to be continued, otherwise start from sratch and initialize the global_step counter at 0
         logger.info("Starting training at step=%d", global_step)
-        while not sv.should_stop() and (not num_global_steps or global_step < num_global_steps):
+        while not sv.should_stop() and (not num_train_steps or global_step < num_train_steps):
             trainer.process(sess) # (original comment) grabs a rollout in the queue and update the parameters of the server
             global_step = sess.run(trainer.global_step)
 
@@ -92,8 +97,12 @@ def run(args, server):
     logger.info('Training finished ; reached %s steps. worker stopped.', global_step)
     time.sleep(5)
 
-    '''
+def run_test(trainer, sv, config, summary_writer, server):
     # Beginning of the test phase
+    num_test_steps = Config.NUM_TEST_STEPS
+    logger.info(
+        "Starting session. If this hangs, we're mostly likely waiting to connect to the parameter server. " +
+        "One common cause is that the parameter server DNS name isn't resolving yet, or is misspecified.")
     with sv.managed_session(server.target, config=config) as sess, sess.as_default():
         sess.run(trainer.sync)
         trainer.start(sess, summary_writer)
@@ -104,7 +113,7 @@ def run(args, server):
             global_step = sess.run(trainer.global_step)
     logger.info('Tests finished ; reached %s steps. worker stopped.', global_step)
     sv.stop()
-    '''
+
 def cluster_spec(num_workers, num_ps): # "ps" = "parameters server" ; num_ps is always 1 when called by the main method
     """
 More tensorflow setup for data parallelism
@@ -146,6 +155,7 @@ def main(_): # In Python shells, the underscore (_) means the result of the last
                              'or the address of pre-existing VNC servers and '
                              'rewarders to use (e.g. -r vnc://localhost:5900+15900,vnc://localhost:5901+15901)')
     parser.add_argument('-n', '--num-trials', type=int, default=None, help='Number of trials per episode with bandit environments')
+    parser.add_argument('--test', action='store_true', help='if present, no training: test only')
 
 
     # (Add visualisation argument)

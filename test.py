@@ -42,9 +42,10 @@ def create_commands(session, num_workers, remotes, env_id, logdir, shell='bash',
     # for launching the TF workers and for launching tensorboard
     base_cmd = [
         'CUDA_VISIBLE_DEVICES=',
-        sys.executable, 'worker_test.py',
+        sys.executable, 'worker.py',
         '--log-dir', logdir,
         '--env-id', env_id,
+        '--test',
         '--num-workers', str(num_workers)]
 
     if "Bandit" in env_id:
