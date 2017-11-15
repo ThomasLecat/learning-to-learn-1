@@ -21,6 +21,13 @@ The purpose of the experiments is to study whether the agent is able to learn th
 
 Bandits environments are stateless but the training is organised in fake episodes during which the internal state of the LSTM is kept. The length of these fake episode is 100 in these experiments but can be set to a different value using the argument -n when calling train.py or test.py
 
+### Note : distinctive features of bandit environments
+
+Bandits environments are stateless, so there is now observation to input the agent's network. As described in the original paper Learning to Reinforcement Learn, the input of the agent's network when using bandit environments is a concatenation of :
+* the last action
+* the last reward
+* the timestep within the (fake) episode
+
 # How to
 
 First, set the values of the parameters you want in config.py
@@ -35,7 +42,7 @@ Both scripts take the same arguments as input. Among them, we can find:
 
 Meta-learning is performed as soon as the -m argument is present. In that case, the environment is recreated at the beginning of each episode. As some parameters are stochastic and sampled at the creation of the environment, the MDP can change from one episode to another. This results in training (and / or testing) the agent on a set of MDPs instead of a single one.
 
-# Example:
+# Examples:
 
 1. Training the agent with 1 worker on a two armed bandit with independent arms:
 
@@ -53,15 +60,29 @@ Meta-learning is performed as soon as the -m argument is present. In that case, 
 
 `python train.py -w 16 -e "Pong-v0" -l ./tmp/pong`
 
+The code will launch the eighteen following processes:
+* worker-0 - a process that runs policy gradient
+			⋮
+* worker-15 - identical to process-1, uses different random noise from the environment
+* ps - the parameter server, which synchronizes the parameters among the different workers
+* tb - a tensorboard process for convenient display of the statistics of learning
 
-# Note : running with bandit environments
+# Results
 
-Bandits environments are stateless, so there is now observation to input the agent's network. As described in the original paper Learning to Reinforcement Learn, the input of the agent's network when using bandit environments is a concatenation of :
-* the last action
-* the last reward
-* the timestep within the (fake) episode
+### Experiment 3.1.1
 
-# Dependencies
+### Experiment 3.1.2
+
+As in the original paper, the agent can generalize (to some extent) from one setup to another.
+For exemple: An agent trained on the easy setup performs reasonably well on the medium setup.
+
+Trained and tested on the easy setup | Tested on the medium setup
+:-----------------------------------:|:-----------------------------------:
+![](https://imgur.com/mwcflcM) | ![](https://imgur.com/AS9zXFI)
+
+# Dependencies & installation
+
+### Dependencies
 
 * Python 2.7 or 3.5
 * [Golang](https://golang.org/doc/install)
@@ -77,7 +98,7 @@ Bandits environments are stateless, so there is now observation to input the age
 * [numpy](https://pypi.python.org/pypi/numpy)
 * [scipy](https://pypi.python.org/pypi/scipy)
 
-# Installation
+### Installation
 
 ```
 conda create --name learning-to-learn python=3.5
@@ -104,9 +125,3 @@ Add the following to your `.bashrc` so that you'll have the correct environment 
 # Example
 
 `python train.py --num-workers 2 --env-id BanditTwoArmedDependantEasy-v0 --log-dir /tmp/banditDependent`
-
-The code will launch the following processes:
-* worker-0 - a process that runs policy gradient
-* worker-1 - a process identical to process-1, that uses different random noise from the environment
-* ps - the parameter server, which synchronizes the parameters among the different workers
-* tb - a tensorboard process for convenient display of the statistics of learning
