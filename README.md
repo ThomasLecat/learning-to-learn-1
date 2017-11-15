@@ -78,7 +78,7 @@ For exemple: An agent trained on the easy setup performs reasonably well on the 
 
 Trained and tested on the easy setup | Tested on the medium setup
 :-----------------------------------:|:-----------------------------------:
-![](https://imgur.com/mwcflcM) | ![](https://imgur.com/AS9zXFI)
+![](https://i.imgur.com/mwcflcM.png) | ![](https://i.imgur.com/AS9zXFI.png)
 
 # Dependencies & installation
 
